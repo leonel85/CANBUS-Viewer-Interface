@@ -1,0 +1,225 @@
+﻿<Window x:Class="CANBUSViewerInterface.View.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:MyConverters ="clr-namespace:CANBUSViewerInterface.Converters"
+        xmlns:MyRules ="clr-namespace:CANBUSViewerInterface.ValidationRules"
+        Title="CAN BUS Viewer V1.0" Height="700" Width="1000">
+    <Window.Resources>
+        <MyConverters:IsGreaterThanConverter x:Key="IsGreaterThanConverter"/>
+        <MyConverters:IntToHexConverter x:Key="IntToHexConverter" />
+        <MyRules:HexValidationRule x:Key="HexValidationRule" />
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="AUTO"/>
+            <RowDefinition Height="AUTO"/>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="AUTO"/>
+            <RowDefinition Height="AUTO"/>
+            <RowDefinition Height="AUTO"/>
+            <RowDefinition Height="AUTO"/>
+        </Grid.RowDefinitions>
+        
+        <Menu Grid.Row="0" Height="30" >
+            <MenuItem Header="File" >
+                <MenuItem Header="Preference"/>
+                <MenuItem Header="Close"/>
+            </MenuItem>
+            <MenuItem Header="Device"/>
+            <MenuItem Header="Options">
+                <MenuItem Header="Save To File" >
+                    <MenuItem Header="CAN Message only" />
+                </MenuItem>               
+            </MenuItem>                      
+            <MenuItem Header="Help">
+                <MenuItem Header="About"/>
+                <MenuItem Header="Version"/>
+            </MenuItem>
+        </Menu>
+        
+        <DockPanel Grid.Row="1" Height="25" Margin="10">
+            <ComboBox HorizontalAlignment="Left" Width="200" SelectedIndex="0"
+                      ItemsSource="{Binding DeviceItems}" SelectedItem="{Binding SelectedDevice}"  />
+
+            <ComboBox Margin="30,0,0,0" HorizontalAlignment="Left" Width="200" SelectedIndex="0"
+                      ItemsSource="{Binding BaudRateItems}" SelectedItem="{Binding SelectedBitRate}"  />
+
+            <ComboBox Margin="30,0,0,0" HorizontalAlignment="Left" Width="200" SelectedIndex="0"
+                      ItemsSource="{Binding OpenModeItems}" SelectedItem="{Binding SelectedOpenMode}" />
+            <Button HorizontalAlignment="Left" Margin="30,0,0,0" Width="120" Content="Connect"
+                    Command="{Binding ConnectCmd}"/>
+
+            <Button HorizontalAlignment="Left" Margin="30,0,0,0" Width="120" Content="Disconnect"
+                    Command="{Binding DisconnectCmd}"/>
+        </DockPanel>
+        
+        <TabControl Grid.Row="2" Margin="10">
+            <TabItem Header="Trace">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="AUTO"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Margin="10">
+                        <CheckBox Content="Save to textfile" Command="{Binding SaveTofileCmd}"
+                                  CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=IsChecked}" VerticalAlignment="Bottom" />
+                        <Button Margin="30,0,0,0"  Content="Clear" Command="{Binding ClearTraceCmd}"/>
+                    </StackPanel>
+                
+                    <DataGrid BorderThickness="1" GridLinesVisibility="Horizontal" Grid.Row="1" AutoGenerateColumns="False" ItemsSource="{Binding CanMessagesItems}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Time (ms)" Binding="{Binding Time}" Width="100" />
+                            <DataGridTextColumn Header="ID" Binding="{Binding ID, StringFormat=X8}" Width="80" />
+                            <DataGridCheckBoxColumn Header="Ext" Binding="{Binding Ext}" Width="40" />
+                            <DataGridCheckBoxColumn Header="RTR" Binding="{Binding RTR}" Width="40" />
+                            <DataGridTextColumn Header="DLC" Binding="{Binding DLC}" />
+                            <DataGridTextColumn Header="D0" Binding="{Binding Data[0], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D1" Binding="{Binding Data[1], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D2" Binding="{Binding Data[2], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D3" Binding="{Binding Data[3], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D4" Binding="{Binding Data[4], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D5" Binding="{Binding Data[5], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D6" Binding="{Binding Data[6], StringFormat=X2}" Width="40"/>
+                            <DataGridTextColumn Header="D7" Binding="{Binding Data[7], StringFormat=X2}" Width="40"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Monitor"/>
+        </TabControl>
+
+        <DockPanel Grid.Row="3" Margin="10" IsEnabled="{Binding IsConnected}" >
+            <DockPanel.Resources>
+                <Style x:Key="hexTextBox" TargetType="TextBox">
+                    <Setter Property="Margin" Value="30,0,0,0"/>
+                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                    <Setter Property="Width" Value="30"/>
+                    <Style.Triggers>
+                        <Trigger Property="Validation.HasError" Value="True">
+                            <Trigger.Setters>
+                                <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self},Path=(Validation.Errors)[0].ErrorContent}"/>
+                            </Trigger.Setters>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DockPanel.Resources>
+
+            <TextBox Style="{StaticResource hexTextBox}" Margin="0" Width="140" >
+                <TextBox.Text>
+                    <Binding Path="Id" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="8" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="8"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+
+            </TextBox>
+            
+            
+            <ComboBox HorizontalAlignment="Left" Margin="30,0,0,0" Width="40"
+                      SelectedIndex="8" SelectedItem="{Binding DataLen}"
+                      ItemsSource="{Binding DataCountItems}"
+                      />
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=0}" >
+                <TextBox.Text>
+                    <Binding Path="D0" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=1}" >
+                <TextBox.Text>
+                    <Binding Path="D1" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=2}" >
+                <TextBox.Text>
+                    <Binding Path="D2" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=3}" >
+                <TextBox.Text>
+                    <Binding Path="D3" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=4}" >
+                <TextBox.Text>
+                    <Binding Path="D4" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=5}" >
+                <TextBox.Text>
+                    <Binding Path="D5" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=6}" >
+                <TextBox.Text>
+                    <Binding Path="D6" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Style="{StaticResource hexTextBox}" 
+                     IsEnabled="{Binding DataLen, Converter={StaticResource IsGreaterThanConverter}, ConverterParameter=4}" >
+                <TextBox.Text>
+                    <Binding Path="D7" UpdateSourceTrigger="PropertyChanged" Converter="{StaticResource IntToHexConverter}" ConverterParameter="2" >
+                        <Binding.ValidationRules>
+                            <MyRules:HexValidationRule CharCount="2"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <CheckBox Content="Ext" IsChecked="{Binding Ext}" HorizontalAlignment="Left" Margin="30,0,0,0"/>
+            <CheckBox Content="RTR" IsChecked="{Binding RTR}" HorizontalAlignment="Left" Margin="30,0,0,0"/>
+            <Button Content="Send" Command="{Binding SendCmd}" HorizontalAlignment="Right" Margin="30,0,0,0"/>
+        </DockPanel>
+        
+        <ListBox Margin="10" Grid.Row="4" Height="100" ItemsSource="{Binding LogMsgItems}"/>
+        
+        <StackPanel Margin="10" Grid.Row="5" Height="30" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Send Random" Width="100" Command="{Binding StartSendRandomCmd}" />
+            <Button Margin="30,0,0,0" Content="Stop Random" Width="100" Command="{Binding StopSendRandomCmd}" />
+            <Button Margin="30,0,0,0" Content="Clear Log" Command="{Binding ClearLogCmd}"/>    
+        </StackPanel>
+    </Grid>
+</Window>
